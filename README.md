@@ -66,7 +66,6 @@ python benchmarks/bench_cpu_gpu.py --nmax 6.5          # NumPy, JAX CPU, JAX GPU
 python benchmarks/plot_bench.py benchmarks/results/bench_*.csv --name bench_cpu
 python benchmarks/gpu_model.py                          # RTX 2050 roofline model
 
-cd report && latexmk -xelatex rapport.tex
 ```
 
 **GPU measurements**: everything is ready in the `gpu/` folder (automatic setup, machine check, chunked benchmark, figures). Guide: [`gpu/README_GPU.md`](gpu/README_GPU.md). In three commands: `bash gpu/setup_gpu.sh`, `source .venv-gpu/bin/activate`, `bash gpu/run_all.sh`.
