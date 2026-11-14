@@ -1,0 +1,27 @@
+{
+  "machine": {
+    "host": "izanami-LOQ-15IAX9",
+    "os": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "cpu_count": 12,
+    "cpu_model": "12th Gen Intel(R) Core(TM) i5-12450HX",
+    "gpu_name": "NVIDIA GeForce RTX 2050",
+    "driver": "595.99.02",
+    "vram": "4096 MiB",
+    "sm_clock_max": "2100 MHz",
+    "power_limit": "[N/A]",
+    "alimentation": "inconnue"
+  },
+  "jax": "0.12.0.1",
+  "pretend_gpu": false,
+  "launch_latency_us": 30.69499507546425,
+  "h2d_GBps": 4.857864712995179,
+  "d2h_GBps": 2.196877117039979,
+  "triad_cpu_fp32_GBps": 19.90030719398101,
+  "triad_cpu_fp64_GBps": 21.370317389223583,
+  "triad_gpu_fp32_GBps": 94.4144629908445,
+  "triad_gpu_fp64_GBps": 91.12792101697387,
+  "matmul_gpu_fp32_GFLOPs": 5474.988923073727,
+  "matmul_gpu_fp64_GFLOPs": 105.51395813013437,
+  "fp64_over_fp32": 0.01927199481362558
+}

@@ -1,0 +1,54 @@
+\section{Structure du dépôt et reproduction}\label{app:repo}
+
+\begin{lstlisting}[language={}]
+jax-j2-gauss/
+|-- src/j2gauss/
+|   |-- mandel.py        notation de Mandel, projecteurs
+|   |-- j2.py            retour radial, version naive, custom_jvp
+|   |-- tangent.py       tangentes AD / analytique / DF / elastique
+|   |-- driver.py        pilotage mixte du point materiel
+|   |-- j2_numpy.py      reference NumPy vectorisee
+|   `-- hyperelastic.py  Neo-Hooke, essais homogenes, ICNN
+|-- tests/               77 tests pytest
+|-- scripts/             etudes : convergence, hysteresis, tangente, Treloar
+|-- benchmarks/          bench_cpu_gpu.py, plot_bench.py, gpu_model.py, results/
+|-- gpu/                 kit GPU : setup, diagnostic, benchmark, figures
+|-- notebooks/           newton_convergence.ipynb, hysteresis.ipynb
+|-- data/treloar.csv     donnees experimentales
+|-- figures/             figures (PDF + PNG)
+|-- results/             CSV des etudes
+`-- report/              ce rapport (LaTeX)
+\end{lstlisting}
+
+Reproduction complète (environ 5~minutes sur CPU) :
+\begin{lstlisting}[language=bash]
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+pytest -q                                   # 77 tests
+cd scripts
+python newton_convergence.py && python hysteresis.py && python tangent_accuracy.py
+python fit_treloar.py && python make_notebooks.py
+cd ..
+python benchmarks/bench_cpu_gpu.py --nmax 6.5
+python benchmarks/plot_bench.py benchmarks/results/bench_*.csv --name bench_cpu
+python benchmarks/gpu_model.py
+bash gpu/setup_gpu.sh                    # machine avec GPU NVIDIA
+source .venv-gpu/bin/activate && bash gpu/run_all.sh
+cd report && latexmk -xelatex rapport.tex
+\end{lstlisting}
+
+\section{Paramètres matériau}\label{app:params}
+
+\begin{center}
+\begin{tabular}{lcccccc}
+\toprule
+Jeu & $E$ (GPa) & $\nu$ & $\sigma_y$ (MPa) & $H$ (MPa) & $Q$ (MPa), $b$ & $C$ (MPa)\\
+\midrule
+linéaire (défaut) & 210 & 0,3 & 250 & 1000 & --- & ---\\
+Voce & 210 & 0,3 & 250 & 1000 & 150, 50 & ---\\
+Prager & 210 & 0,3 & 250 & 0 & --- & 8000\\
+Voce + Prager (benchmarks) & 210 & 0,3 & 250 & 1000 & 150, 50 & 5000\\
+\bottomrule
+\end{tabular}
+\end{center}
+Les données du benchmark sont aléatoires : $\eps\sim\mathcal{N}(0,(3\times10^{-3})^2)$, $\epsp$ et $\X$ déviatoriques de petite amplitude, $p\sim\mathcal{U}(0;0{,}02)$.

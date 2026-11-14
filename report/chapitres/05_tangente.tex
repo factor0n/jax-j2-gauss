@@ -1,0 +1,54 @@
+\section{La tangente cohérente}\label{sec:tangente}
+
+\subsection{Pourquoi « cohérente »}
+
+Au niveau global, l'équilibre discrétisé s'écrit $\mathbf{R}(\mathbf{U}) = \mathbf{F}_{\mathrm{int}}(\mathbf{U})-\mathbf{F}_{\mathrm{ext}}=\mathbf{0}$, avec $\mathbf{F}_{\mathrm{int}} = \sum_e\int_{\Omega_e}\mathbf{B}^T\sig\,\dd\Omega$. Sa jacobienne exacte fait intervenir
+\[
+\frac{\partial\sig_{n+1}}{\partial\eps_{n+1}},
+\]
+c'est-à-dire la dérivée de la contrainte \emph{calculée par l'algorithme de retour radial} par rapport à la déformation d'entrée. C'est la tangente \emph{cohérente} (consistent tangent) : cohérente avec l'algorithme d'intégration, et pas seulement avec la loi continue. D'après la section~\ref{sec:newton}, seule cette tangente assure la convergence quadratique du Newton global.
+
+\begin{rappel}{tangente continue et tangente cohérente}
+La tangente « continue » $\C^{ep}_{\mathrm{cont}}=\C-\frac{(\C:\N)\otimes(\C:\N)}{\N:\C:\N+h}$ relie les \emph{vitesses} $\dot\sig$ et $\dot\eps$ de la loi continue. Elle ignore que le retour radial a, sur un pas fini, fait tourner la direction $\N$. Elle diffère de la tangente cohérente d'un terme en $\Delta p$ : les deux coïncident quand $\Delta p\to0$, mais sur de grands pas la tangente continue ne donne qu'une convergence linéaire.
+\end{rappel}
+
+\subsection{Dérivation}
+
+On note $\n=\bs\xi\tri/\|\bs\xi\tri\|$ la direction unitaire, avec $\|\bs\xi\tri\|=\sqrt{2/3}\,q\tri$, de sorte que $\N=\sqrt{3/2}\,\n$. On différencie $\sig_{n+1}=\C:(\eps-\epsp_n)-2\mu\sqrt{3/2}\,\Delta p\,\n$ par rapport à $\eps=\eps_{n+1}$, à état initial fixé.
+
+\emph{(i) Le prédicteur.} $\dd\bs\xi\tri = 2\mu\,\Id_{\mathrm{dev}}:\dd\eps$.
+
+\emph{(ii) La contrainte équivalente d'essai.} D'après~\eqref{eq:dnorm}, $\dd q\tri = \sqrt{3/2}\,\n:\dd\bs\xi\tri = 2\mu\sqrt{3/2}\,\n:\dd\eps$, car $\Id_{\mathrm{dev}}:\n=\n$.
+
+\emph{(iii) L'incrément plastique.} On différencie $g(\Delta p,q\tri)=0$ (théorème des fonctions implicites) :
+\[
+\dd\Delta p = \frac{\dd q\tri}{3\mu+C+R'(p_{n+1})} = \frac{2\mu\sqrt{3/2}}{3\mu+h}\,\n:\dd\eps,\qquad h=R'(p_{n+1})+C.
+\]
+
+\emph{(iv) La direction.} D'après~\eqref{eq:dnormalized}, $\dd\n = \frac{2\mu}{\|\bs\xi\tri\|}(\Id_{\mathrm{dev}}-\n\otimes\n):\dd\eps$.
+
+\emph{(v) Assemblage.}
+\[
+\dd\sig = \C:\dd\eps - 2\mu\sqrt{\tfrac32}\,\big(\n\,\dd\Delta p + \Delta p\,\dd\n\big).
+\]
+Le coefficient du second terme se simplifie : $2\mu\sqrt{3/2}\,\Delta p/\|\bs\xi\tri\| = 3\mu\Delta p/q\tri$. Le coefficient du premier vaut $2\mu\cdot\frac32\cdot\frac{2\mu}{3\mu+h} = 2\mu\cdot\frac{1}{1+h/(3\mu)}$. On pose
+\begin{equation}
+\theta = 1-\frac{3\mu\Delta p}{q\tri},\qquad \bar\theta = \frac{1}{1+h/(3\mu)}-(1-\theta),
+\end{equation}
+et on regroupe, avec $\C=3K\Id_{\mathrm{vol}}+2\mu\Id_{\mathrm{dev}}$ :
+\begin{equation}
+\boxed{\begin{aligned}
+\C^{ep} \;=\; \frac{\partial\sig_{n+1}}{\partial\eps_{n+1}} \;=\; 3K\,\Id_{\mathrm{vol}} + 2\mu\,\theta\,\Id_{\mathrm{dev}} - 2\mu\,\bar\theta\,\n\otimes\n
+\end{aligned}}
+\label{eq:Cep}
+\end{equation}
+C'est la formule de Simo et Hughes~\cite{simo1998}. Avec $C=0$ et $R'=H$, on retrouve exactement celle du sujet. Le terme $3K\Id_{\mathrm{vol}}=K\,\I\otimes\I$ montre que la plasticité ne touche pas à la réponse volumique.
+
+\subsection{Propriétés}
+
+\begin{itemize}[nosep]
+  \item \textbf{Symétrie.} $\C^{ep}$ est symétrique (majeure). C'est une conséquence de l'écoulement associé. Le Newton global peut donc utiliser un solveur symétrique (Cholesky, gradient conjugué).
+  \item \textbf{Pas élastique.} La tangente vaut alors $\C$. Attention : faire $\Delta p\to0$ dans~\eqref{eq:Cep} ne redonne \emph{pas} $\C$, car $\theta\to1$ mais $\bar\theta\to1/(1+h/(3\mu))\neq0$. On obtient la tangente continue au seuil de plasticité. La tangente est donc discontinue sur la frontière du domaine, et le code sélectionne la branche élastique par un \code{where} explicite.
+  \item \textbf{Écrouissage nul et grand pas.} Dans la direction $\n$, la raideur vaut $\n:\C^{ep}:\n = 2\mu(\theta-\bar\theta) = 2\mu\,\frac{h/(3\mu)}{1+h/(3\mu)}$. Elle tend vers 0 quand $h\to0$ (plasticité parfaite), comme le vérifie le test \code{test\_plastic\_tangent\_is\_softer}.
+  \item \textbf{Dépendance en $R'(p_{n+1})$.} Avec Voce, la pente est évaluée en \emph{fin} de pas. Utiliser $R'(p_n)$ casserait la convergence quadratique.
+\end{itemize}

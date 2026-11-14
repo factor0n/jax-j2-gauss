@@ -1,0 +1,94 @@
+\section{Différentiation automatique et JAX}\label{sec:jax}
+
+\subsection{Principe de la différentiation automatique}
+
+Un programme numérique est une composition de fonctions élémentaires ($+$, $\times$, $\sqrt{\cdot}$, $\exp$\ldots) dont on connaît les dérivées. L'AD applique la règle de dérivation des fonctions composées à cette composition. Le résultat est exact à l'arrondi près : ce n'est ni une approximation comme les différences finies, ni une manipulation symbolique comme celle d'un logiciel de calcul formel~\cite{griewank2008}.
+
+Pour $f:\R^n\to\R^m$ de jacobienne $J$, il existe deux modes.
+\begin{itemize}[nosep]
+  \item \textbf{Mode direct} (JVP, \emph{Jacobian-vector product}) : on propage avec chaque valeur $x$ sa dérivée directionnelle $\dot x$. Formellement, on calcule avec des nombres duaux $x+\dot x\,\epsilon$, $\epsilon^2=0$, car $f(x+\dot x\epsilon)=f(x)+f'(x)\dot x\,\epsilon$. Un passage donne $J\dot{\mathbf{x}}$. La jacobienne complète demande $n$ passages (\code{jax.jacfwd}).
+  \item \textbf{Mode inverse} (VJP) : on exécute le programme, on garde les valeurs intermédiaires, puis on propage des « cotangentes » de la sortie vers l'entrée. Un passage donne $\bar{\mathbf{y}}^TJ$, et la jacobienne demande $m$ passages (\code{jax.jacrev}, \code{jax.grad} si $m=1$). C'est la rétropropagation des réseaux de neurones.
+\end{itemize}
+Pour la tangente, $n=m=6$ et les deux modes coûtent pareil, avec un léger avantage au mode direct, qui n'a pas à stocker d'intermédiaires. Pour \emph{identifier} des paramètres matériau par minimisation d'une fonction coût scalaire, on a $m=1$ et beaucoup d'entrées : le mode inverse s'impose. C'est pourquoi le piège de la section~\ref{sec:piege-nan} compte, même si la tangente n'utilise que le mode direct.
+
+\subsection{JAX en bref}
+
+JAX~\cite{jax2018} applique des \emph{transformations} à des fonctions Python pures, sans effet de bord :
+\begin{itemize}[nosep]
+  \item \code{jax.jit} trace la fonction avec des valeurs abstraites (forme et type seulement) et la compile avec XLA. Les opérations élémentaires sont fusionnées en noyaux, ce qui évite les tableaux temporaires de NumPy ;
+  \item \code{jax.vmap} vectorise une fonction écrite pour \emph{un} point en une fonction sur un lot, sans boucle Python ;
+  \item \code{jax.grad}, \code{jacfwd}, \code{jacrev}, \code{hessian} calculent les dérivées ;
+  \item ces transformations se composent : \code{jit(vmap(jacfwd(integrate)))} donne les tangentes de $N$ points de Gauss en un seul noyau compilé.
+\end{itemize}
+Par défaut JAX calcule en \code{float32}. La double précision s'active par
+\begin{lstlisting}
+jax.config.update("jax_enable_x64", True)
+\end{lstlisting}
+Le paquet le fait à l'import, car une tangente vérifiée à $10^{-12}$ ou un Newton convergé à $10^{-11}$~MPa n'ont pas de sens en simple précision.
+
+\subsection{Piège 1 : le branchement}
+
+\begin{lstlisting}
+if f_tr > 0:        # ConcretizationTypeError sous jit / vmap
+    ...
+\end{lstlisting}
+Sous \code{jit}, \code{f\_tr} est un traceur abstrait sans valeur, et un \code{if} Python ne peut pas en décider. Sous \code{vmap}, il y a $N$ valeurs, certaines positives et d'autres non. La solution est de calculer \emph{les deux branches} et de sélectionner élément par élément avec \code{jnp.where(plastic, a, b)}. Ce n'est pas qu'une contrainte de JAX : c'est exactement ce que fait un GPU (exécution SIMT) ou une unité vectorielle (masques AVX). Le coût d'un point ne dépend donc pas de son état élastique ou plastique (section~\ref{sec:perf}).
+
+\subsection{Piège 2 : \texorpdfstring{\code{where}}{where} et les NaN dans les gradients}\label{sec:piege-nan}
+
+\begin{piege}{une branche non choisie peut quand même empoisonner la dérivée}
+Considérons la version naïve, \code{integrate\_naive}. En $\eps=\mathbf{0}$ on a $\s\tri=\mathbf{0}$, donc $q\tri=\sqrt0=0$. La branche plastique, évaluée même si elle n'est pas choisie, calcule $\Delta p/q\tri$ et la dérivée $\frac{1}{2\sqrt{0}}=\infty$.
+\end{piege}
+
+Le comportement dépend du mode, et nos tests le confirment.
+\begin{itemize}[nosep]
+  \item \textbf{Mode direct.} La JVP de $y=\mathtt{where}(c,a,b)$ est $\dot y=\mathtt{where}(c,\dot a,\dot b)$. La tangente infinie ou NaN de la branche écartée est \emph{jetée} : \code{jacfwd} renvoie une tangente correcte.
+  \item \textbf{Mode inverse.} La VJP envoie la cotangente $\bar a=\mathtt{where}(c,\bar y,0)=0$ dans la branche écartée, puis la remonte à travers $\sqrt{\cdot}$ : $0\times\infty=\mathrm{NaN}$. Ce NaN s'\emph{additionne} au gradient par rapport à $\eps$, qui devient NaN. \code{jacrev} et \code{grad} échouent.
+\end{itemize}
+Une tangente vérifiée en mode direct peut donc donner des gradients NaN le jour où l'on identifie des paramètres. La parade est le \textbf{double \code{where}} : on rend l'\emph{entrée} de l'opération dangereuse sûre dans la branche non utilisée, pour que sa dérivée y soit finie.
+\begin{lstlisting}
+xx      = jnp.dot(xi, xi)
+nonzero = xx > 0.0
+xx_safe = jnp.where(nonzero, xx, 1.0)                    # entree sure
+q_tr    = jnp.where(nonzero, jnp.sqrt(1.5 * xx_safe), 0.0)
+...
+q_solve = jnp.where(plastic, q_tr, R_n)   # branche elastique : g(dp) = 0 a pour solution dp = 0
+\end{lstlisting}
+Le second \code{where} (\code{q\_solve}) protège aussi le Newton local : dans la branche élastique, $f\tri<0$ donnerait un $\Delta p$ négatif, et $e^{-b(p_n+\Delta p)}$ pourrait exploser.
+
+\subsection{Piège 3 : dériver par rapport à une matrice \texorpdfstring{$3\times3$}{3x3}}
+
+\begin{piege}{les symétries mineures}
+Si l'on écrit $\sig(\eps)=\lambda\tr(\eps)\I+2\mu\eps$ avec $\eps$ une matrice $3\times3$, \code{jacfwd} perturbe $\varepsilon_{12}$ et $\varepsilon_{21}$ \emph{indépendamment}, et renvoie $\partial\sigma_{ij}/\partial\varepsilon_{kl}=\lambda\delta_{ij}\delta_{kl}+2\mu\,\delta_{ik}\delta_{jl}$. Ce tenseur n'a pas les symétries mineures. La formule analytique contient $2\mu\,\Id_{ijkl}=\mu(\delta_{ik}\delta_{jl}+\delta_{il}\delta_{jk})$. L'écart est d'ordre $\mu$, et non $10^{-12}$.
+\end{piege}
+Il y a deux remèdes : symétriser l'entrée, $\eps\leftarrow\frac12(\eps+\eps^T)$, avant tout calcul (c'est ce que fait \code{to\_mandel}), ou travailler directement sur les 6 composantes de Mandel. Dans ce cas la jacobienne $6\times6$ \emph{est} la représentation de Mandel du tenseur tangent, sans conversion. Le test \code{test\_3x3\_derivative\_pitfall} montre les deux comportements.
+
+\subsection{Dériver à travers un solveur itératif}\label{sec:implicit}
+
+Avec l'écrouissage de Voce, $\Delta p$ est le résultat d'une boucle de Newton (\code{lax.fori\_loop}). Il y a deux façons de le dériver.
+
+\paragraph{À travers les itérations (« unrolled »).} L'AD dérive chaque itération. C'est automatique, mais la dérivée obtenue est celle de l'itéré $\Delta p^{(n)}$, qui n'est exacte qu'à convergence. En mode inverse, il faut en plus stocker tous les itérés, donc la mémoire croît avec le nombre d'itérations.
+
+\paragraph{Par le théorème des fonctions implicites.} Si $g(x(\mathbf{z}),\mathbf{z})=0$, alors
+\begin{equation}
+\dd x = -\Big(\frac{\partial g}{\partial x}\Big)^{-1}\frac{\partial g}{\partial\mathbf{z}}\,\dd\mathbf{z}.
+\end{equation}
+On ne dérive pas la boucle : on résout, puis on applique cette formule au point solution. Le coût et la mémoire sont indépendants du nombre d'itérations. C'est l'approche de~\cite{blondel2022}. On l'implémente avec \code{jax.custom\_jvp}, et la dérivée $\partial g/\partial\mathbf{z}\cdot\dd\mathbf{z}$ est elle-même obtenue par une JVP automatique de \code{consistency\_residual}. Elle couvre donc aussi la dérivation par rapport aux paramètres matériau, sans formule à la main :
+\begin{lstlisting}
+@partial(jax.custom_jvp, nondiff_argnums=(3,))
+def _solve_dp_implicit(q_tr, p_n, P, n_iter):
+    return _newton_dp(q_tr, p_n, P, n_iter)
+
+@_solve_dp_implicit.defjvp
+def _jvp(n_iter, primals, tangents):
+    q_tr, p_n, P = primals
+    x = _solve_dp_implicit(q_tr, p_n, P, n_iter)
+    dg_dx = jax.grad(consistency_residual)(x, q_tr, p_n, P)
+    _, dg = jax.jvp(lambda q, pn, PP: consistency_residual(x, q, pn, PP), primals, tangents)
+    return x, -dg / dg_dx
+\end{lstlisting}
+C'est exactement l'étape (iii) de la dérivation de la tangente (section~\ref{sec:tangente}), mais faite par la machine. Dans un code comme MFront~\cite{helfer2015}, cette étape correspond au calcul de la « jacobienne du système implicite » qu'on inverse pour obtenir la tangente.
+
+\subsection{Piège 4 : la précision des constantes}
+
+Pour mesurer le FP32, il faut que \emph{toute} la chaîne reste en FP32. Un tableau constant comme \code{ONE}, le vecteur $(1,1,1,0,0,0)$, créé en mode x64 est en \code{float64} et \emph{promeut} tout le calcul. Le code convertit donc les constantes vers le type de l'entrée (\code{ONE.astype(eps.dtype)}) et garde les paramètres matériau comme des flottants Python (« types faibles », qui s'adaptent au type de l'autre opérande). C'est vérifié par \code{test\_float32\_is\_preserved}.

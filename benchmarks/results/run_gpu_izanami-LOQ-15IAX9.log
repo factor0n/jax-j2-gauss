@@ -1,0 +1,171 @@
+== 2026-11-14 13:47 sur izanami-LOQ-15IAX9
+name, driver_version, memory.total [MiB], pstate, power.draw [W], temperature.gpu
+NVIDIA GeForce RTX 2050, 595.99.02, 4096 MiB, P0, 3.32 W, 44
+
+== 1/4 Tests unitaires (la loi est-elle correcte sur cette machine ?)
+........................................................................ [ 93%]
+.....                                                                    [100%]
+77 passed in 35.06s
+
+== 2/4 Diagnostic de la machine
+JAX 0.12.0.1 | appareils : [CudaDevice(id=0)]
+  gpu_name     : NVIDIA GeForce RTX 2050
+  driver       : 595.99.02
+  vram         : 4096 MiB
+  cpu_model    : 12th Gen Intel(R) Core(TM) i5-12450HX
+  cpu_count    : 12
+  alimentation : inconnue
+
+Résultats :
+  latence d'un appel            :     30.7 µs
+  PCIe hôte -> GPU              :     4.86 Go/s
+  PCIe GPU -> hôte              :     2.20 Go/s
+  triade CPU FP32 / FP64        :     19.9 / 21.4 Go/s
+  triade GPU FP32 / FP64        :     94.4 / 91.1 Go/s
+  produit de matrices GPU FP32  :     5475 GFLOP/s
+  produit de matrices GPU FP64  :      106 GFLOP/s
+  rapport FP64 / FP32           : 1/52
+
+->  /home/izanami/code/jax-j2-gauss_gpu/jax-j2-gauss/benchmarks/results/gpu_check_izanami-LOQ-15IAX9.json
+
+== 3/4 Benchmark
+E1114 13:48:20.726030  105232 gpu_hlo_schedule.cc:1076] The byte size of input/output arguments (3040000032) exceeds the base limit (2965372928). This indicates an error in the calculation!
+JAX 0.12.0.1 | CPU : 12th Gen Intel(R) Core(TM) i5-12450HX (12 threads) | GPU : NVIDIA GeForce RTX 2050 | inconnue
+Vérification GPU vs NumPy (écart relatif max) : FP64 1.1e-16, FP32 1.3e-07
+fp64 N=      100 numpy             1.642e+06 pts/s
+fp64 N=      100 jax-cpu           3.405e+06 pts/s
+fp64 N=      100 gpu-resident      1.198e+06 pts/s
+fp64 N=      100 gpu-transfer      1.527e+05 pts/s [envoi 34% | calcul 16% | retour 50%]
+fp64 N=      316 numpy             3.477e+06 pts/s
+fp64 N=      316 jax-cpu           6.055e+06 pts/s
+fp64 N=      316 gpu-resident      3.757e+06 pts/s
+fp64 N=      316 gpu-transfer      4.995e+05 pts/s [envoi 30% | calcul 14% | retour 55%]
+fp64 N=    1,000 numpy             5.874e+06 pts/s
+fp64 N=    1,000 jax-cpu           8.299e+06 pts/s
+fp64 N=    1,000 gpu-resident      7.477e+06 pts/s
+fp64 N=    1,000 gpu-transfer      1.522e+06 pts/s [envoi 36% | calcul 19% | retour 45%]
+fp64 N=    3,162 numpy             7.585e+06 pts/s
+fp64 N=    3,162 jax-cpu           1.093e+07 pts/s
+fp64 N=    3,162 gpu-resident      2.617e+07 pts/s
+fp64 N=    3,162 gpu-transfer      3.873e+06 pts/s [envoi 38% | calcul 15% | retour 47%]
+fp64 N=   10,000 numpy             4.531e+06 pts/s
+fp64 N=   10,000 jax-cpu           2.447e+07 pts/s
+fp64 N=   10,000 gpu-resident      2.907e+07 pts/s
+fp64 N=   10,000 gpu-transfer      6.602e+06 pts/s [envoi 36% | calcul 20% | retour 45%]
+fp64 N=   31,623 numpy             3.862e+06 pts/s
+fp64 N=   31,623 jax-cpu           1.721e+07 pts/s
+fp64 N=   31,623 gpu-resident      5.033e+07 pts/s
+fp64 N=   31,623 gpu-transfer      6.152e+06 pts/s [envoi 37% | calcul 17% | retour 46%]
+fp64 N=  100,000 numpy             4.199e+06 pts/s
+fp64 N=  100,000 jax-cpu           1.627e+07 pts/s
+fp64 N=  100,000 gpu-resident      3.566e+07 pts/s
+fp64 N=  100,000 gpu-transfer      6.928e+06 pts/s [envoi 24% | calcul 16% | retour 59%]
+fp64 N=  316,228 numpy             4.216e+06 pts/s
+fp64 N=  316,228 jax-cpu           2.327e+07 pts/s
+fp64 N=  316,228 gpu-resident      3.974e+07 pts/s
+fp64 N=  316,228 gpu-transfer      9.276e+06 pts/s [envoi 32% | calcul 22% | retour 46%]
+fp64 N=1,000,000 numpy             2.897e+06 pts/s
+fp64 N=1,000,000 jax-cpu           2.211e+07 pts/s
+fp64 N=1,000,000 gpu-resident      4.330e+07 pts/s
+fp64 N=1,000,000 gpu-transfer      6.760e+06 pts/s [envoi 26% | calcul 18% | retour 56%]
+fp64 N=3,162,278 jax-cpu           2.238e+07 pts/s
+fp64 N=3,162,278 gpu-resident      4.531e+07 pts/s
+fp64 N=3,162,278 gpu-transfer      4.300e+06 pts/s [envoi 26% | calcul 11% | retour 63%]
+fp64 N=10,000,000 jax-cpu           2.095e+07 pts/s
+fp64 N=10,000,000 gpu-resident                OOM
+fp64 N=10,000,000 gpu-transfer      3.206e+06 pts/s [envoi 25% | calcul 11% | retour 64%]
+fp32 N=      100 numpy             1.610e+06 pts/s
+fp32 N=      100 jax-cpu           6.862e+06 pts/s
+fp32 N=      100 gpu-resident      1.081e+06 pts/s
+fp32 N=      100 gpu-transfer      1.408e+05 pts/s [envoi 36% | calcul 16% | retour 48%]
+fp32 N=      316 numpy             3.995e+06 pts/s
+fp32 N=      316 jax-cpu           1.595e+07 pts/s
+fp32 N=      316 gpu-resident      1.581e+06 pts/s
+fp32 N=      316 gpu-transfer      3.883e+05 pts/s [envoi 37% | calcul 22% | retour 41%]
+fp32 N=    1,000 numpy             7.680e+06 pts/s
+fp32 N=    1,000 jax-cpu           1.581e+07 pts/s
+fp32 N=    1,000 gpu-resident      7.965e+06 pts/s
+fp32 N=    1,000 gpu-transfer      1.467e+06 pts/s [envoi 40% | calcul 21% | retour 39%]
+fp32 N=    3,162 numpy             1.248e+07 pts/s
+fp32 N=    3,162 jax-cpu           2.815e+07 pts/s
+fp32 N=    3,162 gpu-resident      1.649e+07 pts/s
+fp32 N=    3,162 gpu-transfer      4.684e+06 pts/s [envoi 32% | calcul 12% | retour 56%]
+fp32 N=   10,000 numpy             1.517e+07 pts/s
+fp32 N=   10,000 jax-cpu           5.779e+07 pts/s
+fp32 N=   10,000 gpu-resident      9.590e+07 pts/s
+fp32 N=   10,000 gpu-transfer      1.161e+07 pts/s [envoi 43% | calcul 18% | retour 39%]
+fp32 N=   31,623 numpy             1.369e+07 pts/s
+fp32 N=   31,623 jax-cpu           3.462e+07 pts/s
+fp32 N=   31,623 gpu-resident      1.115e+08 pts/s
+fp32 N=   31,623 gpu-transfer      1.645e+07 pts/s [envoi 31% | calcul 20% | retour 49%]
+fp32 N=  100,000 numpy             1.187e+07 pts/s
+fp32 N=  100,000 jax-cpu           6.271e+07 pts/s
+fp32 N=  100,000 gpu-resident      1.114e+08 pts/s
+fp32 N=  100,000 gpu-transfer      1.751e+07 pts/s [envoi 30% | calcul 16% | retour 54%]
+fp32 N=  316,228 numpy             1.026e+07 pts/s
+fp32 N=  316,228 jax-cpu           5.486e+07 pts/s
+fp32 N=  316,228 gpu-resident      1.441e+08 pts/s
+fp32 N=  316,228 gpu-transfer      1.980e+07 pts/s [envoi 33% | calcul 17% | retour 50%]
+fp32 N=1,000,000 numpy             8.393e+06 pts/s
+fp32 N=1,000,000 jax-cpu           4.063e+07 pts/s
+fp32 N=1,000,000 gpu-resident      1.618e+08 pts/s
+fp32 N=1,000,000 gpu-transfer      2.121e+07 pts/s [envoi 36% | calcul 13% | retour 50%]
+fp32 N=3,162,278 jax-cpu           3.891e+07 pts/s
+fp32 N=3,162,278 gpu-resident      1.795e+08 pts/s
+fp32 N=3,162,278 gpu-transfer      1.704e+07 pts/s [envoi 40% | calcul 13% | retour 46%]
+fp32 N=10,000,000 jax-cpu           4.373e+07 pts/s
+fp32 N=10,000,000 gpu-resident      1.793e+08 pts/s
+fp32 N=10,000,000 gpu-transfer      2.433e+07 pts/s [envoi 36% | calcul 13% | retour 51%]
+
+Résultats -> /home/izanami/code/jax-j2-gauss_gpu/jax-j2-gauss/benchmarks/results/bench_gpu_izanami-LOQ-15IAX9.csv
+
+== 4/4 Figures et résumé
+figure -> figures/gpu_throughput_izanami-LOQ-15IAX9.png
+figure -> figures/gpu_speedup_izanami-LOQ-15IAX9.png
+figure -> figures/gpu_breakdown_izanami-LOQ-15IAX9.png
+# Résultats GPU - machine `izanami-LOQ-15IAX9`
+
+- machine: {'host': 'izanami-LOQ-15IAX9', 'os': 'Linux-7.0.0-42-generic-x86_64-with-glibc2.39', 'python': '3.12.3', 'cpu_count': 12, 'cpu_model': '12th Gen Intel(R) Core(TM) i5-12450HX', 'gpu_name': 'NVIDIA GeForce RTX 2050', 'driver': '595.99.02', 'vram': '4096 MiB', 'sm_clock_max': '2100 MHz', 'power_limit': '[N/A]', 'alimentation': 'inconnue'}
+- verification_ecart_relatif: {'fp64': 1.1429367273915581e-16, 'fp32': 1.3461415568727652e-07}
+
+## Plafonds mesurés (check_gpu.py)
+
+- PCIe hôte -> GPU : 4.86 Go/s ; GPU -> hôte : 2.20 Go/s
+- triade GPU FP64 : 91 Go/s ; triade CPU FP64 : 21.4 Go/s
+- produit de matrices GPU : FP32 5475 GFLOP/s, FP64 106 GFLOP/s (rapport 1/52)
+- latence d'un appel : 31 µs
+
+## Meilleur débit par configuration (points/s)
+
+| configuration | précision | N | débit |
+|---|---|---|---|
+| gpu-resident | fp32 | 3,162,278 | 1.79e+08 |
+| gpu-resident | fp64 | 31,623 | 5.03e+07 |
+| gpu-transfer | fp32 | 10,000,000 | 2.43e+07 |
+| gpu-transfer | fp64 | 316,228 | 9.28e+06 |
+| jax-cpu | fp32 | 100,000 | 6.27e+07 |
+| jax-cpu | fp64 | 10,000 | 2.45e+07 |
+| numpy | fp32 | 10,000 | 1.52e+07 |
+| numpy | fp64 | 3,162 | 7.59e+06 |
+
+## Accélération GPU / JAX CPU
+
+| précision | configuration | accélération max | GPU rentable dès N = |
+|---|---|---|---|
+| fp64 | gpu-resident | 2.92 | 3162 |
+| fp64 | gpu-transfer | 0.43 | jamais |
+| fp32 | gpu-resident | 4.61 | 10000 |
+| fp32 | gpu-transfer | 0.56 | jamais |
+
+## Décomposition du temps (gpu-transfer, plus grand N)
+
+| précision | N | envoi | calcul | retour |
+|---|---|---|---|---|
+| fp64 | 10,000,000 | 25 % | 11 % | 64 % |
+| fp32 | 10,000,000 | 36 % | 13 % | 51 % |
+
+## Mémoire GPU insuffisante
+
+- gpu-resident fp64 N=10,000,000
+
+résumé -> /home/izanami/code/jax-j2-gauss_gpu/jax-j2-gauss/benchmarks/results/gpu_summary_izanami-LOQ-15IAX9.md

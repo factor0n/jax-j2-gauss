@@ -1,0 +1,110 @@
+% Rapport jax-j2-gauss -- compiler avec : latexmk -xelatex rapport.tex
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{french}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{../figures/}}
+\setlength{\emergencystretch}{3em}
+
+% ---------------------------------------------------------------- couleurs, encadrés
+\definecolor{bleu}{HTML}{2a78d6}
+\definecolor{bleuclair}{HTML}{eef4fc}
+\definecolor{orange}{HTML}{eb6834}
+\definecolor{orangeclair}{HTML}{fdf0ea}
+\definecolor{vertclair}{HTML}{e9f7f1}
+\definecolor{vert}{HTML}{1baf7a}
+\definecolor{gris}{HTML}{52514e}
+
+\newmdenv[linecolor=bleu,backgroundcolor=bleuclair,linewidth=1pt,topline=false,rightline=false,
+  bottomline=false,innertopmargin=6pt,innerbottommargin=6pt,skipabove=8pt,skipbelow=8pt]{rappelbox}
+\newmdenv[linecolor=orange,backgroundcolor=orangeclair,linewidth=1pt,topline=false,rightline=false,
+  bottomline=false,innertopmargin=6pt,innerbottommargin=6pt,skipabove=8pt,skipbelow=8pt]{piegebox}
+\newmdenv[linecolor=vert,backgroundcolor=vertclair,linewidth=1pt,topline=false,rightline=false,
+  bottomline=false,innertopmargin=6pt,innerbottommargin=6pt,skipabove=8pt,skipbelow=8pt]{retenirbox}
+\newenvironment{rappel}[1]{\begin{rappelbox}\noindent\textbf{\textcolor{bleu}{Rappel --- #1.}}\ }{\end{rappelbox}}
+\newenvironment{piege}[1]{\begin{piegebox}\noindent\textbf{\textcolor{orange}{Piège --- #1.}}\ }{\end{piegebox}}
+\newenvironment{retenir}{\begin{retenirbox}\noindent\textbf{\textcolor{vert}{À retenir.}}\ }{\end{retenirbox}}
+
+% ---------------------------------------------------------------- code
+\lstset{basicstyle=\ttfamily\small,keywordstyle=\color{bleu}\bfseries,commentstyle=\color{gris}\itshape,
+  stringstyle=\color{orange},breaklines=true,frame=single,rulecolor=\color{gris!40},
+  backgroundcolor=\color{gray!4},xleftmargin=4pt,xrightmargin=4pt,columns=fullflexible,
+  keepspaces=true,showstringspaces=false,language=Python,
+  literate={é}{{\'e}}1 {è}{{\`e}}1 {à}{{\`a}}1 {ê}{{\^e}}1 {ç}{{\c c}}1 {ô}{{\^o}}1 {î}{{\^i}}1 {û}{{\^u}}1 {ù}{{\`u}}1 {É}{{\'E}}1 {«}{{\guillemotleft}}1 {»}{{\guillemotright}}1}
+
+% ---------------------------------------------------------------- notations
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+\newcommand{\sig}{\bs{\sigma}}
+\newcommand{\eps}{\bs{\varepsilon}}
+\newcommand{\epsp}{\bs{\varepsilon}^{p}}
+\newcommand{\X}{\bs{\alpha}}
+\newcommand{\s}{\mathbf{s}}
+\newcommand{\n}{\mathbf{n}}
+\newcommand{\N}{\mathbf{N}}
+\newcommand{\I}{\mathbf{I}}
+\newcommand{\F}{\mathbf{F}}
+\newcommand{\Pk}{\mathbf{P}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Id}{\mathbb{I}}
+\newcommand{\dev}{\operatorname{dev}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\sph}{\operatorname{sph}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\tri}{^{\mathrm{tr}}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\newtheorem{proposition}{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}{Définition}
+
+\title{\textbf{jax-j2-gauss}\\[4pt]
+\large Une loi élastoplastique J2 différentiable et vectorisée en JAX :\\
+intégration, tangente cohérente, performances CPU/GPU\\ et bonus hyperélastique neuronal}
+\author{Ayoub Gounnou\\ \small Master 2 Calcul haute performance et simulation}
+\date{25 décembre 2025}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Ce rapport décrit l'implémentation, la vérification et l'évaluation de performance d'une loi de comportement élastoplastique de von Mises (J2) écrite en JAX, avec l'interface d'une loi de code éléments finis : \code{sigma, state = integrate(eps, state\_old, params)}. La loi traite l'écrouissage isotrope linéaire ou de Voce et l'écrouissage cinématique de Prager. Elle est intégrée par retour radial (Euler implicite). Sa tangente, obtenue par différentiation automatique, coïncide avec la tangente cohérente analytique de Simo et Hughes à $3\times10^{-16}$ près en valeur relative, et avec les différences finies à $4\times10^{-11}$ près. Trois pièges de JAX sont identifiés et testés : le branchement \code{if}, les NaN introduits par \code{jnp.where} en mode inverse, et la perte des symétries mineures quand on dérive par rapport à une matrice $3\times3$. Sur un point matériel en traction à contraintes latérales nulles, on montre que la convergence quadratique attendue n'est \emph{observable} qu'avec un écrouissage non linéaire ou un chargement non proportionnel : avec un écrouissage linéaire en chargement proportionnel, la réponse est affine par morceaux et Newton converge en une itération. L'intégration par lots (\code{jit}+\code{vmap}) est 3,5 à 4,5 fois plus rapide qu'une version NumPy vectorisée. Elle est limitée par la bande passante mémoire, avec un trafic 3,5 fois supérieur au minimum, car XLA découpe le noyau en 12 fusions. Sur un portable équipé d'une RTX~2050, le GPU est 2 fois plus rapide que le CPU en FP64 et 4 fois en FP32 quand les données résident sur la carte. En revanche, il est 2 à 3 fois plus lent dès que l'on compte les transferts PCIe, qui prennent près de 90\,\% du temps. Le plafond PCIe mesuré ($10^7$ points/s en FP64) est atteint à 93\,\%, et le plafond mémoire en FP32 à 100\,\%. Enfin, un potentiel hyperélastique neuronal convexe (ICNN) $\psi_\theta(I_1,I_2)$, polyconvexe par construction, reproduit les trois essais de Treloar avec une erreur quadratique normalisée inférieure à $4\times10^{-3}$.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\input{chapitres/01_introduction}
+\input{chapitres/02_rappels_maths}
+\input{chapitres/03_rappels_meca}
+\input{chapitres/04_integration}
+\input{chapitres/05_tangente}
+\input{chapitres/06_jax}
+\input{chapitres/07_verification}
+\input{chapitres/08_point_materiel}
+\input{chapitres/09_performance}
+\input{chapitres/10_hyperelasticite}
+\input{chapitres/11_conclusion}
+
+\appendix
+\input{chapitres/annexes}
+
+\input{chapitres/bibliographie}
+
+\end{document}

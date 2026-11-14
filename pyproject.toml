@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "j2gauss"
+version = "1.0.0"
+description = "Loi élastoplastique J2 différentiable et vectorisée en JAX"
+authors = [{ name = "Ayoub Gounnou" }]
+requires-python = ">=3.10"
+dependencies = ["jax>=0.4.30", "numpy", "scipy", "optax"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

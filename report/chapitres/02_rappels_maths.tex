@@ -1,0 +1,80 @@
+\section{Rappels mathématiques}\label{sec:maths}
+
+\subsection{Tenseurs d'ordre 2 et 4}
+
+On travaille dans $\R^3$ muni d'une base orthonormée $(\mathbf{e}_1,\mathbf{e}_2,\mathbf{e}_3)$. Un tenseur d'ordre 2 $\mathbf{a}$ s'identifie à une matrice $3\times3$ de composantes $a_{ij}$. On utilise la convention de sommation sur les indices répétés.
+
+\begin{definition}[Produits]
+\begin{align*}
+\text{produit doublement contracté :}\quad & \mathbf{a}:\mathbf{b} = a_{ij}b_{ij} = \tr(\mathbf{a}^T\mathbf{b}),\qquad \|\mathbf{a}\| = \sqrt{\mathbf{a}:\mathbf{a}},\\
+\text{produit tensoriel :}\quad & (\mathbf{a}\otimes\mathbf{b})_{ijkl} = a_{ij}b_{kl},\\
+\text{tenseur d'ordre 4 appliqué :}\quad & (\mathbb{A}:\mathbf{b})_{ij} = A_{ijkl}\,b_{kl}.
+\end{align*}
+\end{definition}
+
+Un tenseur d'ordre 4 $\mathbb{A}$ a les \emph{symétries mineures} si $A_{ijkl}=A_{jikl}=A_{ijlk}$ : il transforme un tenseur symétrique en tenseur symétrique et ne « voit » que la partie symétrique de son argument. Il a la \emph{symétrie majeure} si $A_{ijkl}=A_{klij}$, ce qui est le cas quand il dérive d'un potentiel.
+
+\subsection{Parties sphérique et déviatorique, projecteurs}
+
+Tout tenseur symétrique se décompose en une partie sphérique (proportionnelle à $\I$) et une partie à trace nulle, le déviateur :
+\begin{equation}
+\mathbf{a} = \underbrace{\tfrac13\tr(\mathbf{a})\,\I}_{\sph(\mathbf{a})} + \underbrace{\mathbf{a}-\tfrac13\tr(\mathbf{a})\,\I}_{\dev(\mathbf{a})}.
+\end{equation}
+Ces deux opérations sont linéaires. On les écrit avec deux tenseurs d'ordre 4, qui sont des \emph{projecteurs} orthogonaux ($\mathbb{P}:\mathbb{P}=\mathbb{P}$) :
+\begin{equation}
+\Id_{\mathrm{vol}} = \tfrac13\,\I\otimes\I,\qquad \Id_{\mathrm{dev}} = \Id - \Id_{\mathrm{vol}},\qquad \Id_{ijkl} = \tfrac12(\delta_{ik}\delta_{jl}+\delta_{il}\delta_{jk}),
+\end{equation}
+où $\Id$ est l'identité sur les tenseurs symétriques. On a $\Id_{\mathrm{vol}}:\Id_{\mathrm{dev}}=0$ et $\Id_{\mathrm{vol}}+\Id_{\mathrm{dev}}=\Id$.
+
+\subsection{Notation de Mandel}\label{sec:mandel}
+
+Un tenseur symétrique n'a que 6 composantes indépendantes. On le range dans un vecteur de $\R^6$, en multipliant les termes hors diagonale par $\sqrt2$ :
+\begin{equation}
+\mathbf{a}\ \longmapsto\ \hat{\mathbf{a}} = \big(a_{11},\,a_{22},\,a_{33},\,\sqrt2\,a_{23},\,\sqrt2\,a_{13},\,\sqrt2\,a_{12}\big)^T.
+\end{equation}
+
+\begin{proposition}
+Avec ce choix, $\mathbf{a}:\mathbf{b} = \hat{\mathbf{a}}\cdot\hat{\mathbf{b}}$. Un tenseur d'ordre 4 à symétries mineures devient une matrice $6\times6$ $\hat{\mathbb{A}}$ telle que $\widehat{\mathbb{A}:\mathbf{b}}=\hat{\mathbb{A}}\,\hat{\mathbf{b}}$. La composition $\mathbb{A}:\mathbb{B}$ devient le produit matriciel, et l'identité symétrique $\Id$ devient la matrice identité $I_6$.
+\end{proposition}
+\begin{proof}
+$\mathbf{a}:\mathbf{b} = \sum_i a_{ii}b_{ii} + 2\sum_{i<j}a_{ij}b_{ij} = \sum_i a_{ii}b_{ii} + \sum_{i<j}(\sqrt2a_{ij})(\sqrt2b_{ij})$. Les autres propriétés s'en déduisent en appliquant cette identité à chaque ligne.
+\end{proof}
+
+\begin{rappel}{Mandel ou Voigt}
+La notation de Voigt, courante dans les codes EF, range les contraintes sans facteur ($\sigma_{12}$) et les déformations avec un facteur 2 ($\gamma_{12}=2\varepsilon_{12}$). Le produit scalaire reste correct pour $\sig:\eps$, mais les normes, les projecteurs et l'identité n'ont plus la même forme selon qu'on manipule une contrainte ou une déformation. Mandel traite les deux de la même façon, ce qui rend le code plus simple et moins sujet aux erreurs. Le prix à payer est une conversion à l'interface avec un code qui utilise Voigt.
+\end{rappel}
+
+Dans la notation de Mandel :
+\[
+\hat{\I} = (1,1,1,0,0,0)^T,\qquad \hat{\Id}_{\mathrm{vol}} = \tfrac13\,\hat{\I}\hat{\I}^T,\qquad \hat{\Id}_{\mathrm{dev}} = I_6-\hat{\Id}_{\mathrm{vol}}.
+\]
+Dans la suite on omet le chapeau : tout tenseur symétrique est un vecteur de $\R^6$ et tout tenseur d'ordre 4 une matrice $6\times6$.
+
+\subsection{Dérivées de fonctions tensorielles}
+
+Pour une fonction $f:\R^6\to\R$, le gradient $\partial f/\partial\mathbf{a}$ est le tenseur tel que $\dd f = \frac{\partial f}{\partial\mathbf{a}}:\dd\mathbf{a}$. Deux résultats servent constamment :
+\begin{align}
+\frac{\partial\|\mathbf{a}\|}{\partial\mathbf{a}} &= \frac{\mathbf{a}}{\|\mathbf{a}\|}\quad(\mathbf{a}\neq\mathbf{0}),\label{eq:dnorm}\\
+\frac{\partial}{\partial\mathbf{a}}\Big(\frac{\mathbf{a}}{\|\mathbf{a}\|}\Big) &= \frac{1}{\|\mathbf{a}\|}\big(\Id-\n\otimes\n\big),\qquad \n=\frac{\mathbf{a}}{\|\mathbf{a}\|}.\label{eq:dnormalized}
+\end{align}
+L'équation~\eqref{eq:dnorm} n'est \emph{pas définie} en $\mathbf{a}=\mathbf{0}$, où la norme a un point anguleux. C'est l'origine du piège n°2 de la section~\ref{sec:piege-nan}. L'équation~\eqref{eq:dnormalized} est un projecteur sur l'hyperplan orthogonal à $\n$ : faire varier $\mathbf{a}$ le long de $\n$ ne change pas sa direction.
+
+\subsection{Méthode de Newton et vitesse de convergence}\label{sec:newton}
+
+Pour résoudre $\mathbf{r}(\mathbf{u})=\mathbf{0}$, la méthode de Newton itère
+\begin{equation}
+\mathbf{K}_k\,\delta\mathbf{u} = -\mathbf{r}(\mathbf{u}_k),\qquad \mathbf{u}_{k+1}=\mathbf{u}_k+\delta\mathbf{u}.
+\end{equation}
+\begin{itemize}[nosep]
+  \item Si $\mathbf{K}_k = \partial\mathbf{r}/\partial\mathbf{u}(\mathbf{u}_k)$ (jacobienne exacte), la convergence est \textbf{quadratique} près de la solution : $\|\mathbf{e}_{k+1}\|\le c\,\|\mathbf{e}_k\|^2$. Le nombre de chiffres exacts double à chaque itération.
+  \item Si $\mathbf{K}_k=\mathbf{K}$ est une approximation fixe (Newton modifié), l'erreur vérifie $\mathbf{e}_{k+1}\approx(\mathbf{I}-\mathbf{K}^{-1}\mathbf{J})\,\mathbf{e}_k$. La convergence est \textbf{linéaire}, de taux le rayon spectral $\rho(\mathbf{I}-\mathbf{K}^{-1}\mathbf{J})$, plus exactement la plus grande valeur propre des modes \emph{effectivement excités}.
+\end{itemize}
+L'ordre de convergence se mesure à partir de trois résidus successifs :
+\begin{equation}
+q_k = \frac{\ln(\|\mathbf{r}_{k+1}\|/\|\mathbf{r}_k\|)}{\ln(\|\mathbf{r}_k\|/\|\mathbf{r}_{k-1}\|)}\ \longrightarrow\ \begin{cases}2&\text{(quadratique)}\\1&\text{(linéaire)}\end{cases}
+\label{eq:ordre}
+\end{equation}
+
+\subsection{Différences finies et erreur d'arrondi}\label{sec:df}
+
+La dérivée centrée $f'(x)\approx\frac{f(x+h)-f(x-h)}{2h}$ commet deux erreurs. L'erreur de \emph{troncature} vaut $\frac{h^2}{6}f'''$. L'erreur d'\emph{arrondi} vaut environ $\epsilon_{\mathrm{mach}}|f|/h$, car on soustrait deux nombres très proches, chacun connu à $\epsilon_{\mathrm{mach}}|f|$ près. L'erreur totale est minimale pour $h^\star\sim(\epsilon_{\mathrm{mach}})^{1/3}\approx 6\times10^{-6}$ fois l'échelle de $x$, et vaut alors environ $\epsilon_{\mathrm{mach}}^{2/3}\approx10^{-11}$ en double précision. Les différences finies ne peuvent donc pas faire mieux qu'une dizaine de chiffres, alors que l'AD est exacte à l'arrondi près. La figure~\ref{fig:tangent} le montre.
